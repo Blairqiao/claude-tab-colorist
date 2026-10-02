@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const settingTintFavicon = document.getElementById('setting-tint-favicon');
   const settingFaviconStyle = document.getElementById('setting-favicon-style');
   const settingTopAccent = document.getElementById('setting-top-accent');
+  const settingAccentStyle = document.getElementById('setting-accent-style');
+  const settingGlowIntensity = document.getElementById('setting-glow-intensity');
   const settingAccentHeight = document.getElementById('setting-accent-height');
   const settingInpageBadge = document.getElementById('setting-inpage-badge');
   const settingPrefixTitle = document.getElementById('setting-prefix-title');
@@ -258,7 +260,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     settingTintFavicon.checked = currentSettings.tintFavicon !== false;
     settingFaviconStyle.value = currentSettings.faviconStyle || 'badge';
     settingTopAccent.checked = currentSettings.showTopAccent !== false;
-    settingAccentHeight.value = String(currentSettings.accentHeight || 3);
+    if (settingAccentStyle) settingAccentStyle.value = currentSettings.accentStyle || 'glow';
+    if (settingGlowIntensity) settingGlowIntensity.value = currentSettings.glowIntensity || 'medium';
+    settingAccentHeight.value = String(currentSettings.accentHeight || 4);
     settingInpageBadge.checked = currentSettings.showInPageBadge !== false;
     settingPrefixTitle.checked = currentSettings.prefixTabTitle === true;
   }
@@ -271,7 +275,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       tintFavicon: settingTintFavicon.checked,
       faviconStyle: settingFaviconStyle.value,
       showTopAccent: settingTopAccent.checked,
-      accentHeight: parseInt(settingAccentHeight.value, 10) || 3,
+      accentStyle: settingAccentStyle ? settingAccentStyle.value : 'glow',
+      glowIntensity: settingGlowIntensity ? settingGlowIntensity.value : 'medium',
+      accentHeight: parseInt(settingAccentHeight.value, 10) || 4,
       showInPageBadge: settingInpageBadge.checked,
       prefixTabTitle: settingPrefixTitle.checked
     };
@@ -337,10 +343,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       settingTintFavicon,
       settingFaviconStyle,
       settingTopAccent,
+      settingAccentStyle,
+      settingGlowIntensity,
       settingAccentHeight,
       settingInpageBadge,
       settingPrefixTitle
-    ].forEach((el) => {
+    ].filter(Boolean).forEach((el) => {
       el.addEventListener('change', saveUpdatedSettings);
     });
 

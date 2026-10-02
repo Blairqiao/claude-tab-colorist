@@ -135,14 +135,39 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <label class="setting-label" for="setting-accent-height">Accent Strip Thickness</label>
-            <p class="setting-desc">Thickness of the top accent bar in pixels.</p>
+            <label class="setting-label" for="setting-accent-style">Visual Effect Style</label>
+            <p class="setting-desc">Choose how the chat color is emphasized on the Claude page.</p>
+          </div>
+          <select id="setting-accent-style" class="select-field">
+            <option value="glow" selected>Atmospheric Canopy Glow</option>
+            <option value="bold">Bold Horizon Bar</option>
+            <option value="header-tint">Full Header Illumination</option>
+            <option value="subtle">Subtle Minimal Line</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-glow-intensity">Glow Radiance</label>
+            <p class="setting-desc">Intensity of the downward atmospheric ambient glow.</p>
+          </div>
+          <select id="setting-glow-intensity" class="select-field">
+            <option value="soft">Soft Wash</option>
+            <option value="medium" selected>Balanced Radiance</option>
+            <option value="vibrant">Vibrant Luminous</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-accent-height">Top Bar Thickness</label>
+            <p class="setting-desc">Thickness of the top solid accent bar.</p>
           </div>
           <select id="setting-accent-height" class="select-field">
-            <option value="2">2px (Ultra-subtle)</option>
-            <option value="3" selected>3px (Recommended)</option>
-            <option value="4">4px (Distinct)</option>
-            <option value="6">6px (Prominent)</option>
+            <option value="2">2px (Subtle)</option>
+            <option value="3">3px (Standard)</option>
+            <option value="4" selected>4px (Prominent)</option>
+            <option value="6">6px (Bold)</option>
           </select>
         </div>
 

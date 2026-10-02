@@ -2,9 +2,9 @@
  * Claude Tab Colorist - Content Script
  * Injected on claude.ai pages to provide:
  * 1. Dynamic tab favicon tinting (instant visual differentiation in tab bar)
- * 2. Subtle top accent strip
- * 3. Minimal in-page header badge & quick color picker
- * 4. Automatic SPA route change detection
+ * 2. Subtle top accent strip with atmospheric canopy glow
+ * 3. Minimal in-page header badge & viewport-aware quick color picker
+ * 4. Zero-latency synchronous route transition handling
  */
 
 (function () {
@@ -14,8 +14,12 @@
   if (window.__CLAUDE_TAB_COLORIST_INJECTED__) return;
   window.__CLAUDE_TAB_COLORIST_INJECTED__ = true;
 
+  // In-memory synchronous state cache for zero-latency color resolution
+  let cachedSettings = { ...ClaudeStorage.DEFAULT_SETTINGS };
+  let cachedCustomColors = {};
+  let isCacheReady = false;
+
   // Local state
-  let currentSettings = null;
   let currentColorInfo = null;
   let currentChatKey = null;
   let lastHref = window.location.href;
@@ -26,33 +30,54 @@
    * Initializes the content script.
    */
   async function init() {
-    currentSettings = await ClaudeStorage.getSettings();
-    await updateColorForCurrentPage();
+    // 1. Preload storage caches for synchronous resolution
+    try {
+      const [settings, customColors] = await Promise.all([
+        ClaudeStorage.getSettings(),
+        ClaudeStorage.getCustomColors()
+      ]);
+      cachedSettings = settings || cachedSettings;
+      cachedCustomColors = customColors || {};
+      isCacheReady = true;
+    } catch (err) {
+      console.warn('[ClaudeColorist] Cache preload warning:', err);
+    }
 
+    // 2. Apply colors immediately to active page
+    applyColorImmediately(window.location.href);
+
+    // 3. Setup event listeners
     setupSpaNavigationListener();
     setupStorageListener();
     setupRuntimeMessageListener();
     setupFaviconObserver();
+    setupWindowRepositionListeners();
 
-    // Re-check periodically for SPA transitions or DOM changes
+    // 4. Fallback interval for DOM re-renders by React
     setInterval(checkRouteChanges, 1200);
   }
 
   /**
-   * Evaluates the active chat ID / key and applies corresponding colors.
+   * Immediate synchronous color resolution & DOM update.
+   * Runs in 0ms with zero IPC delay.
    */
-  async function updateColorForCurrentPage() {
-    const url = window.location.href;
+  function applyColorImmediately(url, fallbackTitle) {
     lastHref = url;
     currentChatKey = ClaudeUtils.getChatKey(url);
-    const cleanTitle = ClaudeUtils.cleanTitle(document.title);
+    const cleanTitle = fallbackTitle || ClaudeUtils.cleanTitle(document.title);
 
-    currentColorInfo = await ClaudeStorage.resolveColor(currentChatKey, cleanTitle);
+    currentColorInfo = ClaudeStorage.resolveColorSync(
+      currentChatKey,
+      cachedCustomColors,
+      cachedSettings.autoAssignColors !== false,
+      cleanTitle
+    );
 
+    // Apply CSS variables and visual DOM elements synchronously
     applyThemeColors(currentColorInfo.hex);
-    applyFavicon(currentColorInfo.hex);
     applyTopAccent();
     applyHeaderBadge();
+    applyFavicon(currentColorInfo.hex);
     applyTabTitlePrefix();
   }
 
@@ -62,8 +87,24 @@
   function applyThemeColors(hex) {
     const root = document.documentElement;
     root.style.setProperty('--claude-tint-color', hex);
-    root.style.setProperty('--claude-tint-color-subtle', ClaudeColors.hexToRgba(hex, 0.14));
-    root.style.setProperty('--claude-tint-height', `${currentSettings?.accentHeight || 3}px`);
+    root.style.setProperty('--claude-tint-color-subtle', ClaudeColors.hexToRgba(hex, 0.12));
+
+    // Glow opacity based on intensity setting
+    const intensity = cachedSettings.glowIntensity || 'medium';
+    const glowAlpha = intensity === 'soft' ? 0.14 : intensity === 'vibrant' ? 0.32 : 0.22;
+    root.style.setProperty('--claude-tint-glow', ClaudeColors.hexToRgba(hex, glowAlpha));
+    root.style.setProperty('--claude-tint-border', ClaudeColors.hexToRgba(hex, 0.35));
+    root.style.setProperty('--claude-tint-height', `${cachedSettings?.accentHeight || 4}px`);
+
+    // Apply style variations to root HTML element
+    root.classList.remove(
+      'claude-tint-style-glow',
+      'claude-tint-style-bold',
+      'claude-tint-style-subtle',
+      'claude-tint-style-header-tint'
+    );
+    const styleClass = `claude-tint-style-${cachedSettings?.accentStyle || 'glow'}`;
+    root.classList.add(styleClass);
   }
 
   /* ==========================================================================
@@ -82,13 +123,11 @@
     if (!ctx) return null;
 
     ctx.clearRect(0, 0, size, size);
-
     const cx = size / 2;
     const cy = size / 2;
 
     if (style === 'emblem') {
-      // Full colored emblem style:
-      // Rounded squircle background
+      // Full colored emblem style
       const r = size * 0.22;
       ctx.beginPath();
       ctx.roundRect(1, 1, size - 2, size - 2, r);
@@ -98,29 +137,24 @@
       // Render Claude starburst in custom color
       drawClaudeStarburst(ctx, cx, cy, size * 0.38, hex);
     } else {
-      // Default Badge style:
-      // Claude emblem in signature warm charcoal/terracotta
+      // Default Badge style: Claude emblem with color notification dot
       const r = size * 0.22;
       ctx.beginPath();
       ctx.roundRect(1, 1, size - 2, size - 2, r);
       ctx.fillStyle = '#1E1E1C';
       ctx.fill();
 
-      // Draw Claude starburst centered
       drawClaudeStarburst(ctx, cx, cy - 1, size * 0.32, '#FAF9F5');
 
-      // Draw high-contrast notification-style color badge dot in bottom right
       const badgeX = size - 7.5;
       const badgeY = size - 7.5;
       const badgeRadius = 6;
 
-      // Outer contrast ring
       ctx.beginPath();
       ctx.arc(badgeX, badgeY, badgeRadius + 1.5, 0, Math.PI * 2);
       ctx.fillStyle = '#1E1E1C';
       ctx.fill();
 
-      // Inner color circle
       ctx.beginPath();
       ctx.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
       ctx.fillStyle = hex;
@@ -130,9 +164,6 @@
     return canvas.toDataURL('image/png');
   }
 
-  /**
-   * Helper to draw Claude's signature 6/8-point modulated starburst emblem on canvas.
-   */
   function drawClaudeStarburst(ctx, cx, cy, radius, fillStyle) {
     ctx.save();
     ctx.beginPath();
@@ -141,7 +172,6 @@
 
     for (let i = 0; i <= points; i++) {
       const angle = (i / points) * Math.PI * 2;
-      // Modulate radius with cosine waves to create Claude's petal rays
       const wave = (Math.cos(petals * angle) + 1.0) * 0.5;
       const r = radius * (0.32 + 0.68 * Math.pow(wave, 1.8));
       const px = cx + Math.cos(angle) * r;
@@ -159,18 +189,14 @@
     ctx.restore();
   }
 
-  /**
-   * Applies the dynamic favicon to document.head.
-   */
   function applyFavicon(hex) {
-    if (!currentSettings || !currentSettings.tintFavicon) return;
+    if (!cachedSettings || !cachedSettings.tintFavicon) return;
 
     try {
       isUpdatingFavicon = true;
-      const dataUrl = renderFaviconDataUrl(hex, currentSettings.faviconStyle || 'badge');
+      const dataUrl = renderFaviconDataUrl(hex, cachedSettings.faviconStyle || 'badge');
       if (!dataUrl) return;
 
-      // Remove or update existing icons
       let iconLink = document.querySelector('link[rel~="icon"]');
       if (!iconLink) {
         iconLink = document.createElement('link');
@@ -187,16 +213,13 @@
     }
   }
 
-  /**
-   * Guards against Claude's SPA router rewriting our favicon.
-   */
   function setupFaviconObserver() {
     if (faviconObserver) faviconObserver.disconnect();
 
     const debouncedRestore = ClaudeUtils.debounce(() => {
       if (isUpdatingFavicon || !currentColorInfo) return;
       applyFavicon(currentColorInfo.hex);
-    }, 200);
+    }, 150);
 
     faviconObserver = new MutationObserver((mutations) => {
       if (isUpdatingFavicon) return;
@@ -232,12 +255,12 @@
   }
 
   /* ==========================================================================
-     2. Top Accent Strip
+     2. Top Accent Strip & Atmospheric Canopy Glow
      ========================================================================== */
 
   function applyTopAccent() {
     let strip = document.getElementById('claude-tint-accent-strip');
-    const enabled = currentSettings?.showTopAccent !== false;
+    const enabled = cachedSettings?.showTopAccent !== false;
 
     if (!enabled) {
       if (strip) strip.style.display = 'none';
@@ -256,13 +279,14 @@
   }
 
   /* ==========================================================================
-     3. In-Page Header Badge & Mini Popover Picker
+     3. In-Page Header Badge & Viewport-Aware Mini Popover Picker
      ========================================================================== */
 
   function applyHeaderBadge() {
-    if (!currentSettings?.showInPageBadge) {
+    if (!cachedSettings?.showInPageBadge) {
       const existing = document.getElementById('claude-tint-header-badge');
       if (existing) existing.remove();
+      closePopover();
       return;
     }
 
@@ -280,13 +304,9 @@
         <svg class="claude-tint-chevron" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
         </svg>
-        <div id="claude-tint-popover"></div>
       `;
 
       badge.addEventListener('click', (e) => {
-        // Toggle popover unless clicking inside the popover itself
-        const popover = document.getElementById('claude-tint-popover');
-        if (popover && popover.contains(e.target)) return;
         e.stopPropagation();
         togglePopover();
       });
@@ -294,29 +314,29 @@
       // Close popover when clicking anywhere outside
       document.addEventListener('click', (e) => {
         const popover = document.getElementById('claude-tint-popover');
-        if (badge && !badge.contains(e.target)) {
+        if (popover && !popover.contains(e.target) && !badge.contains(e.target)) {
           closePopover();
         }
       });
 
       mountBadge(badge);
-      buildPopoverContent();
     }
 
-    // Update label and color
+    // Update label text
     const labelEl = badge.querySelector('.claude-tint-label');
     if (labelEl && currentColorInfo) {
       labelEl.textContent = currentColorInfo.name;
     }
 
+    // If popover is already open, keep active swatch updated
     updatePopoverActiveSwatch();
+    positionPopover();
   }
 
   /**
-   * Mounts the badge into Claude's header navigation or falls back to floating.
+   * Mounts the badge into Claude's header or floats in corner.
    */
   function mountBadge(badge) {
-    // Try to find Claude's header or model title container
     const headerSelectors = [
       'header [data-testid="chat-header"]',
       'header [data-testid="header-model-selector"]',
@@ -334,22 +354,81 @@
       }
     }
 
-    if (targetContainer && currentSettings?.badgePosition !== 'floating') {
+    if (targetContainer && cachedSettings?.badgePosition !== 'floating') {
       badge.classList.remove('claude-tint-floating');
       targetContainer.appendChild(badge);
     } else {
-      // Floating pill in bottom right
       badge.classList.add('claude-tint-floating');
       (document.body || document.documentElement).appendChild(badge);
     }
   }
 
   /**
+   * Creates or gets the popover element mounted directly on document.body.
+   * This guarantees it is never clipped by Claude's headers or overflow parents.
+   */
+  function getOrCreatePopover() {
+    let popover = document.getElementById('claude-tint-popover');
+    if (!popover) {
+      popover = document.createElement('div');
+      popover.id = 'claude-tint-popover';
+      document.body.appendChild(popover);
+
+      // Stop clicks inside popover from closing it
+      popover.addEventListener('click', (e) => e.stopPropagation());
+    }
+    return popover;
+  }
+
+  /**
+   * Dynamically positions the popover relative to the badge with boundary clamping.
+   * Solves Bug 1: Never out-of-bounds, even when the badge starts at the top-right corner.
+   */
+  function positionPopover() {
+    const badge = document.getElementById('claude-tint-header-badge');
+    const popover = document.getElementById('claude-tint-popover');
+    if (!badge || !popover || !popover.classList.contains('claude-tint-open')) return;
+
+    const badgeRect = badge.getBoundingClientRect();
+    const popoverWidth = 260;
+    const popoverHeight = 310;
+    const padding = 12;
+
+    // Horizontal positioning:
+    // If opening from the badge's left edge causes an overflow to the right of the window,
+    // align to the badge's right edge instead.
+    let left = badgeRect.left;
+    if (left + popoverWidth > window.innerWidth - padding) {
+      left = badgeRect.right - popoverWidth;
+    }
+    // Strict boundary clamping so popover stays 100% on-screen
+    left = Math.max(padding, Math.min(window.innerWidth - popoverWidth - padding, left));
+
+    // Vertical positioning:
+    // If opening down causes bottom overflow, flip to open above the badge
+    let top = badgeRect.bottom + 8;
+    if (top + popoverHeight > window.innerHeight - padding) {
+      if (badgeRect.top - popoverHeight - 8 > padding) {
+        top = badgeRect.top - popoverHeight - 8;
+      } else {
+        top = Math.max(padding, window.innerHeight - popoverHeight - padding);
+      }
+    }
+
+    popover.style.left = `${Math.round(left)}px`;
+    popover.style.top = `${Math.round(top)}px`;
+  }
+
+  function setupWindowRepositionListeners() {
+    window.addEventListener('resize', positionPopover, { passive: true });
+    window.addEventListener('scroll', positionPopover, { capture: true, passive: true });
+  }
+
+  /**
    * Builds the interactive color picker inside the popover.
    */
   function buildPopoverContent() {
-    const popover = document.getElementById('claude-tint-popover');
-    if (!popover) return;
+    const popover = getOrCreatePopover();
 
     popover.innerHTML = `
       <div class="claude-tint-popover-header">
@@ -415,20 +494,20 @@
       });
     }
 
-    // Event: More options (open Chrome extension popup or notify)
+    // Event: More options
     const moreBtn = popover.querySelector('#claude-tint-more-btn');
     if (moreBtn) {
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        alert('To customize tabs, favicons, and accent options, click the Claude Tab Colorist icon in your browser toolbar.');
+        alert('To customize tabs, favicons, canopy glow, and accent options, click the Claude Tab Colorist icon in your browser toolbar.');
       });
     }
   }
 
   function togglePopover() {
-    const popover = document.getElementById('claude-tint-popover');
+    const popover = getOrCreatePopover();
     const badge = document.getElementById('claude-tint-header-badge');
-    if (!popover || !badge) return;
+    if (!badge) return;
 
     const isOpen = popover.classList.contains('claude-tint-open');
     if (isOpen) {
@@ -437,6 +516,7 @@
       buildPopoverContent();
       popover.classList.add('claude-tint-open');
       badge.setAttribute('aria-expanded', 'true');
+      positionPopover();
     }
   }
 
@@ -473,9 +553,13 @@
     if (!currentChatKey) {
       currentChatKey = ClaudeUtils.getChatKey(window.location.href);
     }
-    await ClaudeStorage.setCustomColor(currentChatKey, hex);
-    await updateColorForCurrentPage();
+    // Update local cache immediately
+    cachedCustomColors[currentChatKey] = hex;
+    applyColorImmediately(window.location.href);
     closePopover();
+
+    // Persist to storage in background
+    await ClaudeStorage.setCustomColor(currentChatKey, hex);
   }
 
   /**
@@ -483,10 +567,11 @@
    */
   async function resetToAuto() {
     if (currentChatKey) {
+      delete cachedCustomColors[currentChatKey];
+      applyColorImmediately(window.location.href);
+      closePopover();
       await ClaudeStorage.removeCustomColor(currentChatKey);
     }
-    await updateColorForCurrentPage();
-    closePopover();
   }
 
   /* ==========================================================================
@@ -494,7 +579,7 @@
      ========================================================================== */
 
   function applyTabTitlePrefix() {
-    if (!currentSettings?.prefixTabTitle || !currentColorInfo) return;
+    if (!cachedSettings?.prefixTabTitle || !currentColorInfo) return;
     const bullet = '● ';
     if (!document.title.startsWith(bullet)) {
       document.title = bullet + ClaudeUtils.cleanTitle(document.title) + ' - Claude';
@@ -502,16 +587,16 @@
   }
 
   /* ==========================================================================
-     5. SPA Navigation & Event Listeners
+     5. Zero-Lag Navigation & Event Listeners
      ========================================================================== */
 
   function checkRouteChanges() {
     const currentHref = window.location.href;
     if (currentHref !== lastHref) {
-      updateColorForCurrentPage();
+      applyColorImmediately(currentHref);
     }
     // Also re-mount badge if Claude redrew header
-    if (currentSettings?.showInPageBadge) {
+    if (cachedSettings?.showInPageBadge) {
       const badge = document.getElementById('claude-tint-header-badge');
       if (!badge || !document.contains(badge)) {
         applyHeaderBadge();
@@ -520,34 +605,52 @@
   }
 
   function setupSpaNavigationListener() {
-    // Intercept pushState & replaceState
     const originalPush = history.pushState;
     const originalReplace = history.replaceState;
 
+    // Instant synchronous interception on pushState
     history.pushState = function (...args) {
       const ret = originalPush.apply(this, args);
-      setTimeout(updateColorForCurrentPage, 50);
+      applyColorImmediately(window.location.href);
       return ret;
     };
 
+    // Instant synchronous interception on replaceState
     history.replaceState = function (...args) {
       const ret = originalReplace.apply(this, args);
-      setTimeout(updateColorForCurrentPage, 50);
+      applyColorImmediately(window.location.href);
       return ret;
     };
 
+    // Instant browser back/forward navigation
     window.addEventListener('popstate', () => {
-      setTimeout(updateColorForCurrentPage, 50);
+      applyColorImmediately(window.location.href);
     });
+
+    // Preemptive click listener: when user clicks a link to another chat in Claude's sidebar,
+    // immediately transition the color bar in 0ms before React completes routing!
+    document.addEventListener(
+      'click',
+      (e) => {
+        const link = e.target.closest('a[href*="/chat/"], a[href*="/project/"]');
+        if (link && link.href) {
+          applyColorImmediately(link.href, link.textContent);
+        }
+      },
+      { capture: true, passive: true }
+    );
   }
 
   function setupStorageListener() {
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'sync' || areaName === 'local') {
-        setTimeout(async () => {
-          currentSettings = await ClaudeStorage.getSettings();
-          await updateColorForCurrentPage();
-        }, 50);
+        if (changes[ClaudeStorage.STORAGE_KEYS.SETTINGS]) {
+          cachedSettings = changes[ClaudeStorage.STORAGE_KEYS.SETTINGS].newValue || { ...ClaudeStorage.DEFAULT_SETTINGS };
+        }
+        if (changes[ClaudeStorage.STORAGE_KEYS.CUSTOM_COLORS]) {
+          cachedCustomColors = changes[ClaudeStorage.STORAGE_KEYS.CUSTOM_COLORS].newValue || {};
+        }
+        applyColorImmediately(window.location.href);
       }
     });
   }
@@ -556,8 +659,13 @@
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'REFRESH_COLOR' || message.type === 'SETTINGS_UPDATED') {
         (async () => {
-          currentSettings = await ClaudeStorage.getSettings();
-          await updateColorForCurrentPage();
+          if (message.settings) {
+            cachedSettings = message.settings;
+          } else {
+            cachedSettings = await ClaudeStorage.getSettings();
+          }
+          cachedCustomColors = await ClaudeStorage.getCustomColors();
+          applyColorImmediately(window.location.href);
           sendResponse({ success: true });
         })();
         return true;

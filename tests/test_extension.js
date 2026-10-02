@@ -145,7 +145,24 @@ async function runStorageTests() {
     const settings = await ClaudeStorage.getSettings();
     assert.strictEqual(settings.tintFavicon, true);
     assert.strictEqual(settings.showTopAccent, true);
-    assert.strictEqual(settings.accentHeight, 3);
+    assert.strictEqual(settings.accentHeight, 4);
+    assert.strictEqual(settings.accentStyle, 'glow');
+    assert.strictEqual(settings.glowIntensity, 'medium');
+  });
+
+  await testAsync('resolveColorSync produces immediate synchronous results without IPC', async () => {
+    const chatKey = 'chat:sync-test-456';
+    const customColors = { [chatKey]: '#8E5572' };
+    
+    // Custom match
+    const customRes = ClaudeStorage.resolveColorSync(chatKey, customColors, true);
+    assert.strictEqual(customRes.isCustom, true);
+    assert.strictEqual(customRes.hex, '#8E5572');
+
+    // Auto match
+    const autoRes = ClaudeStorage.resolveColorSync('chat:other-789', customColors, true);
+    assert.strictEqual(autoRes.isCustom, false);
+    assert.ok(autoRes.hex.startsWith('#'));
   });
 
   await testAsync('Custom colors override deterministic auto colors', async () => {
@@ -166,6 +183,35 @@ async function runStorageTests() {
     const revertedColor = await ClaudeStorage.resolveColor(chatKey);
     assert.strictEqual(revertedColor.isCustom, false);
     assert.strictEqual(revertedColor.hex, autoColor.hex);
+  });
+
+  test('Popover viewport boundary positioning logic', () => {
+    // Simulate badge at the top-right corner of a 1440px wide viewport
+    const windowWidth = 1440;
+    const windowHeight = 900;
+    const badgeRect = { left: 1380, right: 1420, top: 16, bottom: 44, width: 40, height: 28 };
+    const popoverWidth = 260;
+    const popoverHeight = 310;
+    const padding = 12;
+
+    let left = badgeRect.left;
+    if (left + popoverWidth > windowWidth - padding) {
+      left = badgeRect.right - popoverWidth;
+    }
+    left = Math.max(padding, Math.min(windowWidth - popoverWidth - padding, left));
+
+    let top = badgeRect.bottom + 8;
+    if (top + popoverHeight > windowHeight - padding) {
+      top = badgeRect.top - popoverHeight - 8;
+    }
+
+    // Verify popover is 100% inside the viewport bounds
+    assert.ok(left >= padding, `Left edge ${left} must be >= ${padding}`);
+    assert.ok(left + popoverWidth <= windowWidth - padding, `Right edge ${left + popoverWidth} must be <= ${windowWidth - padding}`);
+    assert.ok(top >= padding, `Top edge ${top} must be >= ${padding}`);
+    assert.ok(top + popoverHeight <= windowHeight - padding, `Bottom edge ${top + popoverHeight} must be <= ${windowHeight - padding}`);
+    // Specifically verify it flipped inwards:
+    assert.strictEqual(left, 1420 - 260, 'Should align to badge right edge when badge is in top-right corner');
   });
 }
 

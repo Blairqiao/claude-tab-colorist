@@ -18,7 +18,9 @@
     tintFavicon: true,
     faviconStyle: 'badge', // 'badge' (Claude emblem with colored badge) or 'emblem' (full colored Claude emblem)
     showTopAccent: true,
-    accentHeight: 3, // in pixels (2, 3, 4, 6)
+    accentHeight: 4, // in pixels (2, 3, 4, 6)
+    accentStyle: 'glow', // 'glow' (Luminous Canopy Glow), 'bold', 'subtle', 'header-tint'
+    glowIntensity: 'medium', // 'soft', 'medium', 'vibrant'
     showInPageBadge: true,
     badgePosition: 'header', // 'header' or 'floating'
     prefixTabTitle: false,
@@ -182,6 +184,41 @@
     };
   }
 
+  /**
+   * Synchronous color resolver using in-memory state.
+   * Runs in 0ms with zero IPC latency.
+   */
+  function resolveColorSync(chatKey, customColors = {}, autoAssignEnabled = true, fallbackText = '') {
+    if (chatKey && customColors[chatKey]) {
+      const hex = customColors[chatKey];
+      return {
+        hex,
+        isCustom: true,
+        name: ClaudeColors.getColorName(hex),
+        preset: ClaudeColors.findPreset(hex)
+      };
+    }
+
+    if (autoAssignEnabled) {
+      const seed = chatKey || fallbackText || 'claude-chat';
+      const preset = ClaudeColors.hashStringToColor(seed);
+      return {
+        hex: preset.hex,
+        isCustom: false,
+        name: preset.name,
+        preset
+      };
+    }
+
+    const defaultPreset = ClaudeColors.PRESET_COLORS[0];
+    return {
+      hex: defaultPreset.hex,
+      isCustom: false,
+      name: defaultPreset.name,
+      preset: defaultPreset
+    };
+  }
+
   return {
     DEFAULT_SETTINGS,
     STORAGE_KEYS,
@@ -191,6 +228,7 @@
     setCustomColor,
     removeCustomColor,
     clearAllCustomColors,
-    resolveColor
+    resolveColor,
+    resolveColorSync
   };
 });
