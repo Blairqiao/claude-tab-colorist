@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Tab Colorist</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="colorist-app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-logo" viewBox="0 0 32 32" width="22" height="22">
+          <rect width="32" height="32" rx="8" fill="#1E1E1C"/>
+          <path d="M16 6 C17 12, 20 15, 26 16 C20 17, 17 20, 16 26 C15 20, 12 17, 6 16 C12 15, 15 12, 16 6 Z" fill="#CC785C"/>
+          <circle cx="24" cy="24" r="3.5" fill="#E5A93C"/>
+        </svg>
+        <div class="brand-text">
+          <h1 class="brand-title">Claude Tab Colorist</h1>
+          <p class="brand-subtitle">Visual chat differentiation</p>
+        </div>
+      </div>
+      <button type="button" class="icon-btn" id="open-settings-btn" title="Display preferences" aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main View -->
+    <main class="app-main" id="main-view">
+      <!-- Active Claude Chat Section -->
+      <section class="section" id="active-chat-section">
+        <div class="card active-chat-card" id="chat-card">
+          <div class="chat-card-top">
+            <div class="chat-color-indicator" id="current-color-bubble"></div>
+            <div class="chat-card-meta">
+              <span class="chat-status-badge" id="chat-status-badge">Auto Color</span>
+              <h2 class="chat-title" id="chat-title">Detecting active chat...</h2>
+              <span class="chat-id-tag" id="chat-id-tag">claude.ai</span>
+            </div>
+          </div>
+
+          <!-- Color Assignment Controls -->
+          <div class="palette-wrapper">
+            <div class="palette-header">
+              <span class="palette-label">Preset Pigments</span>
+              <span class="palette-current-name" id="palette-color-name">Terracotta</span>
+            </div>
+            <div class="swatches-grid" id="swatches-grid">
+              <!-- Swatches generated dynamically by popup.js -->
+            </div>
+
+            <!-- Custom Color Picker Row -->
+            <div class="custom-color-row">
+              <div class="color-picker-control">
+                <input type="color" id="native-color-picker" value="#CC785C" title="Choose custom color">
+                <span class="color-picker-swatch" id="picker-swatch-preview"></span>
+              </div>
+              <input type="text" id="hex-input" class="hex-field" placeholder="#CC785C" maxlength="7" spellcheck="false">
+              <button type="button" class="btn btn-secondary" id="apply-custom-btn">Apply</button>
+              <button type="button" class="btn btn-ghost" id="reset-color-btn" title="Reset to auto-assigned color">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Non-Claude notice banner (hidden when on Claude) -->
+        <div class="notice-banner" id="non-claude-notice" style="display: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <div>
+            <strong>Not on Claude</strong>
+            <p>Switch to or open a tab on <code>claude.ai</code> to customize this tab, or select an open Claude chat below.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Open Claude Tabs List -->
+      <section class="section">
+        <div class="section-header">
+          <h3 class="section-title">Open Claude Tabs</h3>
+          <span class="count-pill" id="tabs-count">0</span>
+        </div>
+        <div class="tabs-list" id="open-tabs-container">
+          <div class="empty-tabs-notice">Searching for active Claude tabs...</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings View (Toggled) -->
+    <section class="app-settings" id="settings-view" style="display: none;">
+      <div class="settings-header">
+        <button type="button" class="btn-back" id="close-settings-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Back
+        </button>
+        <h2 class="settings-title">Display Preferences</h2>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-tint-favicon">Dynamic Tab Favicon</label>
+            <p class="setting-desc">Tints the favicon in Chrome's tab bar for instant visual differentiation.</p>
+          </div>
+          <input type="checkbox" id="setting-tint-favicon" class="switch" checked>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-favicon-style">Favicon Style</label>
+            <p class="setting-desc">Choose how the color is displayed on the tab icon.</p>
+          </div>
+          <select id="setting-favicon-style" class="select-field">
+            <option value="badge">Accent Badge Dot</option>
+            <option value="emblem">Full Colored Emblem</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-top-accent">Top Accent Strip</label>
+            <p class="setting-desc">Displays a sleek colored border at the top of the Claude page.</p>
+          </div>
+          <input type="checkbox" id="setting-top-accent" class="switch" checked>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-accent-height">Accent Strip Thickness</label>
+            <p class="setting-desc">Thickness of the top accent bar in pixels.</p>
+          </div>
+          <select id="setting-accent-height" class="select-field">
+            <option value="2">2px (Ultra-subtle)</option>
+            <option value="3" selected>3px (Recommended)</option>
+            <option value="4">4px (Distinct)</option>
+            <option value="6">6px (Prominent)</option>
+          </select>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-inpage-badge">In-Page Header Badge</label>
+            <p class="setting-desc">Embeds a subtle color pill in Claude's navigation with quick picker.</p>
+          </div>
+          <input type="checkbox" id="setting-inpage-badge" class="switch" checked>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label" for="setting-prefix-title">Prefix Tab Title</label>
+            <p class="setting-desc">Prepends a colored dot symbol (●) to the tab's window title.</p>
+          </div>
+          <input type="checkbox" id="setting-prefix-title" class="switch">
+        </div>
+      </div>
+
+      <div class="settings-actions-group">
+        <div class="settings-backup-row">
+          <button type="button" class="btn btn-secondary" id="export-colors-btn">Export Colors (JSON)</button>
+          <button type="button" class="btn btn-secondary" id="import-colors-btn">Import Colors</button>
+          <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        </div>
+        <button type="button" class="btn btn-danger-outline" id="clear-all-colors-btn">Clear All Custom Colors</button>
+      </div>
+    </section>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="../shared/colors.js"></script>
+  <script src="../shared/utils.js"></script>
+  <script src="../shared/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

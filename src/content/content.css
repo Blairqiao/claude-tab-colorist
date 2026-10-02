@@ -1,0 +1,322 @@
+/**
+ * Claude Tab Colorist - Content Styles
+ * Crafted to complement Claude's minimalist warm typography and interface.
+ */
+
+:root {
+  --claude-tint-color: #CC785C;
+  --claude-tint-color-subtle: rgba(204, 120, 92, 0.12);
+  --claude-tint-height: 3px;
+}
+
+/* ==========================================================================
+   Top Accent Strip
+   ========================================================================== */
+#claude-tint-accent-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--claude-tint-height, 3px);
+  background-color: var(--claude-tint-color);
+  z-index: 2147483647; /* Highest z-index */
+  pointer-events: none;
+  transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   In-Page Header Badge
+   ========================================================================== */
+#claude-tint-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 9999px;
+  background-color: var(--claude-tint-color-subtle);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  vertical-align: middle;
+  z-index: 1000;
+  line-height: 1.2;
+}
+
+#claude-tint-header-badge:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.16);
+  transform: translateY(-0.5px);
+}
+
+/* Floating fallback mode if Claude header isn't easily reachable */
+#claude-tint-header-badge.claude-tint-floating {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  background: #FAF9F5;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  padding: 6px 12px 6px 9px;
+  font-size: 13px;
+  z-index: 99999;
+}
+
+/* Dark mode adjustment for floating badge */
+@media (prefers-color-scheme: dark) {
+  #claude-tint-header-badge {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  #claude-tint-header-badge.claude-tint-floating {
+    background: #252422;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #F4F3EE;
+  }
+  #claude-tint-header-badge:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.claude-tint-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--claude-tint-color);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.25s ease;
+}
+
+.claude-tint-label {
+  opacity: 0.9;
+  letter-spacing: 0.01em;
+}
+
+.claude-tint-chevron {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+#claude-tint-header-badge[aria-expanded="true"] .claude-tint-chevron {
+  transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   Quick Color Picker Popover
+   ========================================================================== */
+#claude-tint-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 256px;
+  background-color: #FAF9F5;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  padding: 14px;
+  z-index: 2147483646;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px) scale(0.98);
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1F1E1D;
+  box-sizing: border-box;
+}
+
+#claude-tint-popover.claude-tint-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Floating badge popover positioning */
+#claude-tint-header-badge.claude-tint-floating #claude-tint-popover {
+  bottom: 100%;
+  top: auto;
+  right: 0;
+  left: auto;
+  margin-bottom: 8px;
+  margin-top: 0;
+  transform: translateY(4px) scale(0.98);
+}
+#claude-tint-header-badge.claude-tint-floating #claude-tint-popover.claude-tint-open {
+  transform: translateY(0) scale(1);
+}
+
+.claude-tint-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.claude-tint-popover-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #73726C;
+}
+
+.claude-tint-popover-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #605F5B;
+}
+
+/* Swatch Grid */
+.claude-tint-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.claude-tint-swatch {
+  width: 100%;
+  height: 32px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  padding: 0;
+  outline: none;
+}
+
+.claude-tint-swatch:hover {
+  transform: scale(1.08);
+}
+
+.claude-tint-swatch.active {
+  border-color: #1F1E1D;
+  box-shadow: 0 0 0 1px #FAF9F5;
+}
+
+/* Custom Color Row */
+.claude-tint-custom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.claude-tint-color-input-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.claude-tint-color-input {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.claude-tint-hex-text {
+  flex-grow: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #FFFFFF;
+  color: #1F1E1D;
+  outline: none;
+}
+
+.claude-tint-hex-text:focus {
+  border-color: #CC785C;
+}
+
+/* Reset / Auto Button */
+.claude-tint-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.claude-tint-btn-subtle {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #8C8A82;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.claude-tint-btn-subtle:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1F1E1D;
+}
+
+/* Dark mode styling for popover */
+@media (prefers-color-scheme: dark) {
+  #claude-tint-popover {
+    background-color: #252422;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #F4F3EE;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+  .claude-tint-popover-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  .claude-tint-popover-title {
+    color: #A3A29E;
+  }
+  .claude-tint-popover-status {
+    background: rgba(255, 255, 255, 0.08);
+    color: #C7C6C2;
+  }
+  .claude-tint-swatch.active {
+    border-color: #F4F3EE;
+    box-shadow: 0 0 0 1px #252422;
+  }
+  .claude-tint-custom-row {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+  .claude-tint-hex-text {
+    background: #1C1B19;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #F4F3EE;
+  }
+  .claude-tint-btn-subtle {
+    color: #9C9A94;
+  }
+  .claude-tint-btn-subtle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+  }
+}
