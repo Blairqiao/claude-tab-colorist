@@ -14,7 +14,7 @@ When juggling multiple Claude chats simultaneously, identifying tabs in Chrome's
 - **Automatic Deterministic Colors**: Every Claude chat (`/chat/:id`, `/project/:id`) automatically receives an elegant, consistent pigment upon opening, hashed deterministically from the chat identifier.
 - **Dynamic Tab Favicons**: The tab icon in the Chrome tab strip is dynamically updated with a crisp colored accent badge or full monochrome emblem, making tabs identifiable at a glance.
 - **Custom Color Assignments**: Assign set colors to any conversation via the toolbar popup or the embedded in-page pill. Choose from 16 Claude-curated pigments (Terracotta, Sunlit Amber, Earthy Sage, Aegean Slate, Warm Mulberry, Vintage Rose, etc.) or enter any custom HEX value.
-- **Minimal Top Accent Strip**: A sleek, non-distracting 3px accent bar at the top of the viewport confirms which chat you are in without adding UI clutter.
+- **Top Accent Strip & Canopy Glow**: A prominent 4px accent bar with a downward luminous ambient canopy glow (36px) confirms which chat you are in without adding UI clutter.
 - **In-Page Header Badge & Mini Quick Picker**: A discreet color pill seamlessly integrates into Claude's top navigation bar. Click it to open a mini palette popover directly on the page.
 - **Multi-Tab Overview**: Open the extension popup to view all active Claude tabs across windows, their assigned colors, and switch to any conversation with one click.
 - **Adaptive Dark & Light Mode**: Harmonizes with both light (warm cream) and dark (charcoal/warm stone) Claude themes.
@@ -40,8 +40,8 @@ When juggling multiple Claude chats simultaneously, identifying tabs in Chrome's
 ### 1. Tab Strip Differentiation
 Chrome displays the favicon for each open tab. Claude Tab Colorist renders a dedicated 32×32 canvas element combining Claude's iconic starburst with a high-contrast colored badge dot in the bottom-right corner. When you have 8 Claude tabs open, each tab has its own distinct color marker in the Chrome tab bar.
 
-### 2. In-Page Top Accent
-A fixed `3px` strip at the top of `claude.ai` matches the chat's color with zero interaction interference (`pointer-events: none`). You can adjust the thickness (2px, 3px, 4px, 6px) or disable it entirely in preferences.
+### 2. In-Page Top Accent & Atmospheric Canopy Glow
+A fixed `4px` strip at the top of `claude.ai` combined with an ambient downward luminous canopy glow (36px) instantly washes the top of the interface in the conversation's unique color, with zero interaction interference (`pointer-events: none`). You can customize the effect style (Atmospheric Canopy Glow, Bold Horizon, Full Header Illumination, or Subtle Line), adjust glow radiance (Soft, Balanced, Vibrant), or customize thickness (2px, 3px, 4px, 6px).
 
 ### 3. In-Page Header Pill & Mini Popover
 When viewing a conversation on Claude, a small pill appears in Claude's navigation header:

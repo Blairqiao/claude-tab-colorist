@@ -19,7 +19,7 @@ KEY FEATURES
 - Automatic Color Differentiation: Every Claude chat is automatically assigned an elegant, distinct pigment upon opening.
 - Dynamic Tab Favicons: Identifies each tab in Chrome's tab bar by updating the Claude icon with a crisp colored accent badge or emblem.
 - Custom Color Overrides: Select any curated preset pigment (Terracotta, Sage, Amber, Aegean Slate, Mulberry, Olive, and more) or choose any custom HEX color.
-- Subtle In-Page Accent: A minimal, non-intrusive 3px color strip at the top of the Claude interface reinforces which chat is active without visual distraction.
+- Subtle In-Page Accent & Canopy Glow: A prominent 4px color strip with an ambient downward luminous canopy glow across the top of the Claude interface reinforces which chat is active without visual distraction.
 - Quick In-Page Pill & Popover: Click the minimal color pill directly inside Claude's header to switch colors on the fly.
 - Multi-Tab Overview: View and search all open Claude tabs across windows from the extension toolbar popup, and switch between conversations instantly.
 - Seamless Dark & Light Mode: All pigments and UI elements adapt gracefully to Claude's light and dark themes.
