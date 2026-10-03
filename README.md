@@ -27,10 +27,7 @@ When juggling multiple Claude chats simultaneously, identifying tabs in Chrome's
 2. Navigate to `chrome://extensions/`.
 3. Toggle on **Developer mode** in the top-right corner.
 4. Click **Load unpacked** in the top-left corner.
-5. Select this folder:
-   ```
-   /Users/blair/Desktop/Projects/Chrome extension
-   ```
+5. Select this folder: `Chrome extension`
 6. The **Claude Tab Colorist** extension is now active! Pin it to your Chrome toolbar for easy access.
 
 ---
